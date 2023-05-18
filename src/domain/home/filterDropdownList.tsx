@@ -22,16 +22,6 @@ const FilterDropdownList = () => {
       label: "Negative",
       value: "negative",
     },
-    {
-      id: "4",
-      label: "Neutral",
-      value: "neutral",
-    },
-    {
-      id: "5",
-      label: "Mixed",
-      value: "mixed",
-    },
   ];
   return (
     <Box width={"200px"}>
