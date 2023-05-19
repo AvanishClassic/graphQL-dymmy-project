@@ -2,22 +2,22 @@ import FilterDropdown from "../../component/filterDropdown/filterDropdown";
 import { useFilterData } from "../../store/store";
 import { FilterProps } from "../../component/filterDropdown/types";
 import { Box } from "@mui/material";
+import { ProductCardProps } from "./type";
 
-const FilterDropdownList = () => {
+type FilterDropdownListProps = {
+  data: ProductCardProps[];
+};
+
+const FilterDropdownList = ({ data }: FilterDropdownListProps) => {
   const { setFilterData, filterData } = useFilterData();
 
-  const filterOptions: FilterProps[] = [
-    {
-      id: "1",
-      label: "All",
-      value: "",
-    },
-    {
-      id: "2",
-      label: "Avanish",
-      value: "Avanish",
-    },
-  ];
+  const filterOptions: FilterProps[] = data?.map((item) => {
+    return {
+      id: item.id,
+      label: item.name,
+      value: item.name,
+    };
+  });
   return (
     <Box width={"200px"}>
       <FilterDropdown

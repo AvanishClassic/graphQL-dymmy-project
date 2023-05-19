@@ -1,6 +1,17 @@
 export type ProductCardProps = {
-  firstName: string;
-  lastName: string;
-  phoneNumber: number | undefined;
-  date: string;
+  updatedAt: string;
+  address: string;
+  description: string;
+  id: string;
+  name: string;
+  status: string;
+  taxId: string;
+  npi: string;
+  telecom: TelecomProps[];
+  alias: string;
+};
+
+type TelecomProps = {
+  value: string;
+  system: string;
 };

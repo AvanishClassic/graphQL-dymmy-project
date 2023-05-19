@@ -3,72 +3,68 @@ import CachedIcon from "@mui/icons-material/Cached";
 import AddIcon from "@mui/icons-material/Add";
 import { BoxContent } from "../../component/boxContent";
 import FilterDropdownList from "./filterDropdownList";
+
 import ProductCard from "./productCard";
 import { useEffect, useState } from "react";
 import FeatureModal from "../../component/featureModal/featureModal";
 import { useFilterData } from "../../store/store";
 import { ProductCardProps } from "./type";
+import { NetworkStatus, useQuery } from "@apollo/client";
+import { GET_ALL_LOCATION } from "../../gqloperation/queries";
+import InfiniteScroll from "react-infinite-scroll-component";
 
-const data: ProductCardProps[] = [
-  {
-    firstName: "Avanish",
-    lastName: "Parashar",
-    phoneNumber: 1234567,
-    date: " Jan 7 8:30",
-  },
-  {
-    firstName: "Atmeshwar",
-    lastName: "Singh",
-    phoneNumber: 9749839573,
-    date: " Jan 7 8:30",
-  },
-  {
-    firstName: "Deepak",
-    lastName: "",
-    phoneNumber: 937838473,
-    date: " Jan 7 8:30",
-  },
-  {
-    firstName: "Prasaana",
-    lastName: "",
-    phoneNumber: 8957385843,
-    date: " Jan 7 8:30",
-  },
-];
+const defaultCurrentItem = {
+  address: "",
+  description: "",
+  id: "",
+  name: "",
+  status: "",
+  taxId: "",
+  updatedAt: "",
+  alias: "",
+  npi: "",
+  telecom: [
+    {
+      value: "",
+      system: "",
+    },
+  ],
+};
 
 const Home = () => {
   const [mode, setMode] = useState("");
   const { filterData } = useFilterData();
-  const [searchedValue, setSearchedValue] = useState("");
-  const [currentlItem, setCurrentItem] = useState<ProductCardProps>({
-    firstName: "",
-    lastName: "",
-    phoneNumber: undefined,
-    date: "",
+  const [limit, setLimit] = useState(10);
+  const {
+    data: locationData,
+    loading,
+    fetchMore,
+    refetch,
+    networkStatus,
+  } = useQuery(GET_ALL_LOCATION, {
+    variables: { tenant: import.meta.env.VITE_TENANT, offset: 0, limit },
+    notifyOnNetworkStatusChange: true,
   });
+  const [searchedValue, setSearchedValue] = useState("");
+  const [currentlItem, setCurrentItem] =
+    useState<ProductCardProps>(defaultCurrentItem);
   const handleClose = () => setMode("");
 
   useEffect(() => {
     if (!mode) {
-      console.log("object");
-      setCurrentItem({
-        firstName: "",
-        lastName: "",
-        phoneNumber: undefined,
-        date: "",
-      });
+      setCurrentItem(defaultCurrentItem);
     }
   }, [mode]);
 
   const shouldSearchedData = (item: ProductCardProps) => {
-    if (!searchedValue || item.firstName.includes(searchedValue)) {
+    if (!searchedValue || item.name.includes(searchedValue)) {
       return true;
     }
     return false;
   };
 
   const shouldFilterName = (item: ProductCardProps) => {
-    if (!filterData || item.firstName === filterData) {
+    if (!filterData || item.name === filterData) {
       return true;
     }
     return false;
@@ -81,8 +77,20 @@ const Home = () => {
     return false;
   };
 
-  const getPropductData = data.filter((item: ProductCardProps) =>
-    filterProductData(item)
+  const fetchMoreData = () => {
+    const currentLength = locationData.feed.length;
+    fetchMore({
+      variables: {
+        offset: currentLength,
+        limit: 10,
+      },
+    }).then((fetchMoreResult) => {
+      setLimit(currentLength + fetchMoreResult.data.feed.length);
+    });
+  };
+
+  const getPropductData = locationData?.locationList?.resources.filter(
+    (item: ProductCardProps) => filterProductData(item)
   );
 
   return (
@@ -99,7 +107,10 @@ const Home = () => {
         }}>
         <BoxContent component="form">
           <Box display="flex" mb="10px" justifyContent={"space-between"}>
-            <Button color="inherit" sx={{ border: "1px solid black" }}>
+            <Button
+              onClick={() => refetch({ tenant: import.meta.env.VITE_TENANT })}
+              color="inherit"
+              sx={{ border: "1px solid black" }}>
               <CachedIcon />
             </Button>
             <Button onClick={() => setMode("add")} color="inherit">
@@ -119,19 +130,36 @@ const Home = () => {
             />
           </FormControl>
           <Box display={"flex"} mt={3} gap={"20px"} flex={1}>
-            <FilterDropdownList />
+            {!loading && (
+              <FilterDropdownList
+                data={locationData?.locationList?.resources}
+              />
+            )}
           </Box>
           <Box overflow={"auto"} height={"650px"} mt={4}>
-            {getPropductData.map((item) => (
-              <Box
-                mb={2}
-                onClick={() => {
-                  setCurrentItem(item);
-                  setMode("edit");
-                }}>
-                <ProductCard {...item} />
-              </Box>
-            ))}
+            {loading || networkStatus === NetworkStatus.refetch ? (
+              <>Loading...</>
+            ) : (
+              <InfiniteScroll
+                dataLength={getPropductData.length}
+                next={fetchMoreData}
+                style={{ display: "flex", flexDirection: "column-reverse" }} //To put endMessage and loader to the top.
+                loader={<h4>No data</h4>}
+                hasMore={true}
+                scrollableTarget="scrollableDiv">
+                {getPropductData.map((item: ProductCardProps) => (
+                  <Box
+                    mb={2}
+                    key={item.id}
+                    onClick={() => {
+                      setCurrentItem(item);
+                      setMode("edit");
+                    }}>
+                    <ProductCard {...item} />
+                  </Box>
+                ))}
+              </InfiniteScroll>
+            )}
           </Box>
         </BoxContent>
       </Container>
