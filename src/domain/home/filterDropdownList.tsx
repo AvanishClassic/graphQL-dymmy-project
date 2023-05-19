@@ -24,7 +24,7 @@ const FilterDropdownList = ({ data }: FilterDropdownListProps) => {
         label="Name"
         filteredValue={filterData}
         setFilteredValue={setFilterData}
-        filters={filterOptions}
+        filters={[...[{ id: "1", label: "All", value: "" }], ...filterOptions]}
       />
     </Box>
   );
